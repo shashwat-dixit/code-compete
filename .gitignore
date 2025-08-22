@@ -1,3 +1,22 @@
+# ------------------------
+# OS / Editor cruft
+# ------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
 # Logs
 logs
 *.log
@@ -7,21 +26,35 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-__pycache__
+# ------------------------
+# Python / FastAPI
+# ------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+build/
+dist/
+*.db
+venv/
 
-*.env
-node_modules
-dist
-dist-ssr
-*.local
+# ------------------------
+# Node / Next.js
+# ------------------------
+node_modules/
+.next/
+out/
+*.tsbuildinfo
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# ------------------------
+# Common secrets & env files
+# ------------------------
+.env
