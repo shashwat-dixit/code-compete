@@ -1,0 +1,99 @@
+########################################
+# OS / Editor
+########################################
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+*.swp
+*.swo
+
+########################################
+# Node / Frontend (Vite + React + TS + SWC)
+########################################
+node_modules/
+dist/
+build/
+.vite/
+*.log
+
+########################################
+# Go
+########################################
+# Binaries
+bin/
+out/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build cache
+**/tmp/
+**/.cache/
+**/.test/
+
+# Go workspace
+go.work
+go.work.sum
+
+########################################
+# Environment files
+########################################
+.env
+.env.*
+!.env.example
+
+########################################
+# Docker
+########################################
+# Local overrides
+docker-compose.override.yml
+
+# Docker artifacts
+**/*.pid
+
+########################################
+# Database
+########################################
+# Local DB data (docker volumes)
+postgres-data/
+redis-data/
+
+########################################
+# Kafka / Redpanda
+########################################
+redpanda-data/
+kafka-data/
+zookeeper-data/
+
+########################################
+# Terraform
+########################################
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+
+########################################
+# Logs
+########################################
+logs/
+*.log
+
+########################################
+# Test Artifacts / Coverage
+########################################
+coverage/
+*.out
+
+########################################
+# Temporary / Scratch
+########################################
+tmp/
+scratch/
