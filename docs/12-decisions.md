@@ -23,7 +23,7 @@ Recorded 2026-08-18 from the product/stack discussion. Update this file when a d
 | SQL | **pgx + sqlc** when persistence lands. No GORM/Prisma. |
 | Contracts | OpenAPI (REST) + JSON Schema (WS/events) in `packages/contracts`. Hand-written types are OK until the first real endpoint. |
 | Auth | **OAuth 2.0 in the Go API** (GitHub first). Not Better Auth, not Clerk. See [Auth](#auth). |
-| Judge | **Custom Docker runner**, Judge0-shaped internally. You build it. Spec: [13 Judge runner](./13-judge-runner.md). |
+| Judge | **Custom Docker runner in [gobox](https://github.com/shashwat-dixit/gobox)**, Judge0-shaped. Not hosted/self-hosted Judge0. Built by hand in that repo. Contract: [13 Judge runner](./13-judge-runner.md). This repo’s `worker-runner` is a thin client, not the sandbox. |
 | Languages (product) | **Python, C++, Go, Java.** Ship Python in the runner first, then the other three before public V1. |
 | First deploy | **AWS** (single region). Not VPS, not multi-region. |
 | Analytics | None for MVP. |
@@ -63,3 +63,4 @@ Google (or a second provider) can be added as another `auth_identities` row late
 - AWS shape: one EC2 + compose vs ECS Fargate (decide in the first deploy PR, not now)
 - chi vs stdlib for the API (stdlib until it hurts)
 - Monaco vs CodeMirror (still **Monaco** unless you change it)
+- gobox interface: Go library vs localhost HTTP (pick in the first gobox PR; not a public Judge0 clone)

@@ -61,6 +61,10 @@ This project will be built by hand in small PRs. Reviews optimize for: **missing
 
 ### Judge PRs
 
+Sandbox work belongs in [gobox](https://github.com/shashwat-dixit/gobox). If a PR here grows Docker-run / compile-harness logic, reject it.
+
+When reviewing gobox (or an adapter PR here):
+
 - Include at least one test that a network call fails.
 - Include a TLE test (infinite loop).
 - Confirm containers are removed after run.

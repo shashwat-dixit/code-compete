@@ -18,7 +18,7 @@ It exists so we can:
 | New to the repo / restarting the project | [01 Current state](./01-current-state.md) then [02 Product and scope](./02-product-and-scope.md) |
 | Checking what we locked | [12 Decisions](./12-decisions.md) |
 | Implementing a feature | [09 Roadmap](./09-roadmap.md) plus the domain docs for that slice |
-| Building the judge | [13 Judge runner](./13-judge-runner.md) |
+| Building the judge | [gobox](https://github.com/shashwat-dixit/gobox) (implementation + checklist). Contract: [13 Judge runner](./13-judge-runner.md) |
 | Opening or reviewing a PR | [10 PR review checklist](./10-pr-review-checklist.md) |
 
 ## Reading order
