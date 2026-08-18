@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codecompete.dev/schemas/events/execution.completed.v1.json",
+  "title": "execution.completed.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "submission_id", "status", "passed_tests", "total_tests"],
+  "properties": {
+    "v": { "const": 1 },
+    "submission_id": { "type": "string", "format": "uuid" },
+    "status": {
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "ACCEPTED",
+        "WRONG_ANSWER",
+        "TIME_LIMIT_EXCEEDED",
+        "MEMORY_LIMIT_EXCEEDED",
+        "RUNTIME_ERROR",
+        "COMPILATION_ERROR",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "passed_tests": { "type": "integer", "minimum": 0 },
+    "total_tests": { "type": "integer", "minimum": 0 },
+    "runtime_ms": { "type": ["integer", "null"] },
+    "memory_kb": { "type": ["integer", "null"] },
+    "first_fail_index": { "type": ["integer", "null"] },
+    "compile_output": { "type": ["string", "null"] }
+  }
+}

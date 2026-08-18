@@ -9,9 +9,11 @@ alwaysApply: true
 When reviewing a pull request in this repository:
 
 1. Read `docs/10-pr-review-checklist.md` and apply it.
-2. Compare the change to `docs/02-product-and-scope.md` and `docs/09-roadmap.md`. Flag work that jumps ahead of a working 1v1 match (Battle Royale, CRDT, VS Code, Magic UI, multi-region AWS, practice-site features).
-3. Treat these as security blockers: sandbox network/Docker socket/host FS access, missing resource limits, hidden test leakage, IDOR, unauthenticated submit/WS, committed secrets, unbounded `code` payloads, SQL concatenation.
+2. Compare the change to `docs/12-decisions.md`, `docs/02-product-and-scope.md`, and `docs/09-roadmap.md`. Flag work that jumps ahead of a working 1v1 match (Battle Royale, CRDT, VS Code, Magic UI, multi-region AWS, practice-site features).
+3. Treat these as security blockers: sandbox network/Docker socket/host FS access, privileged containers, missing resource limits, hidden test leakage, IDOR, unauthenticated submit/WS, committed secrets, unbounded `code` payloads, SQL concatenation, OAuth tokens in localStorage.
 4. Treat these as correctness blockers: illegal match state transitions, two winners from concurrent ACs, client-side match clocks, submit outside `RUNNING`.
-5. If REST/WS/events/tables change, require an update under `docs/` in the same PR.
-6. Do not revive Express/Prisma/FastAPI/CDK/LeetCode GraphQL from git history unless `docs/11-open-questions.md` records that decision.
-7. Cite files and explain impact. Do not nitpick landing-page aesthetics before the match loop exists.
+5. Judge PRs must follow `docs/13-judge-runner.md`.
+6. If REST/WS/events/tables change, require an update under `docs/` in the same PR.
+7. Do not revive Express/Prisma/FastAPI/Better Auth/Clerk/Kafka-from-day-one/CDK unless `docs/12-decisions.md` is updated first.
+8. Cite files and explain impact. Do not nitpick landing-page aesthetics before the match loop exists.
+9. The owner implements feature PRs. Do not implement auth, judge, or match logic unless explicitly asked.

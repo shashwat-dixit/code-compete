@@ -37,19 +37,14 @@ Do **not** bind-mount the host Docker socket into the sandbox. Do **not** run `d
 
 Kill the container after the result is collected. Disk growth from leftover containers is a production outage waiting to happen.
 
-### Languages for MVP
+### Languages (product set)
 
-Pick **one or two**:
-
-- Python 3 — fastest to ship
-- C++17 — expected by CP players
-
-Java is heavy (JVM warmup, memory). JavaScript is fine later. The 2024 CDK attempted per-language ECS services; that is a scaling optimization, not an MVP need. One worker pool with a `language` field is enough.
+Python, C++, Go, Java. Implement **Python first** in the runner, then the other three. One worker pool, `language` field. Spec: [13](./13-judge-runner.md).
 
 ## What we will not do
 
 - **LeetCode GraphQL** as a judge or problem source (old README). Legal and operational trap.
-- **Judge0 public instance** for production (rate limits, data leaves our hosts). Self-hosted Judge0 is an acceptable alternative to a custom runner if we want to move faster — decision in open questions.
+- **Judge0 public instance** for production. We build our own runner. Self-hosted Judge0 is not the plan.
 - **eval in the API process** (Python `exec`, Node `vm`, etc.)
 
 ## AuthN / AuthZ

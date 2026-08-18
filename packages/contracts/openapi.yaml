@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: Code Compete API
+  version: 0.0.1
+  description: Skeleton. Real routes land in feature PRs.
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: Process is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: api

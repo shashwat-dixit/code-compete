@@ -22,7 +22,7 @@ Not the primary audience for MVP: ICPC teams, interview-prep platforms, or paid 
 | ELO-ish matchmaking | ELO matchmaking |
 | Replay of the race | Replay of submissions / timeline |
 
-Opponents should feel **present** (progress bars, join/leave, countdown). Showing other players' **full source** live is a separate, later, cheat-sensitive feature — not MVP.
+Opponents should feel **present**: tests passed, last verdict, and a typing/thinking indicator (WPM or 🧠). Showing other players' **full source** live is out. See [14](./14-private-rooms-and-br.md).
 
 ## Core gameplay (1v1, the thing we must get right)
 
@@ -31,7 +31,7 @@ Opponents should feel **present** (progress bars, join/leave, countdown). Showin
 3. Match enters `COUNTDOWN`, problem is revealed, editor unlocks at `RUNNING`.
 4. Players write code, run sample tests (optional), then submit.
 5. Judge executes against hidden tests in a sandbox.
-6. First player to get `ACCEPTED` wins. Time expires → draw or winner by test progress (decision needed).
+6. First player to get `ACCEPTED` wins. Time expires with no AC → **most tests passed** wins and takes ELO.
 7. ELO updates, match is persisted, both players see a results screen.
 
 Battle Royale, cash contests, CRDT, and VS Code are **modes and clients on top of this loop**, not the loop itself.
@@ -42,13 +42,13 @@ Legend: **MVP** must ship for the product to be real. **V1** is the first public
 
 ### Must-have (MVP)
 
-- Email/OAuth login and sessions
+- GitHub OAuth login and sessions
 - Problem bank of a handful of well-tested problems (not 100 fake seed problems)
 - Matchmaking (simple rating buckets is enough)
 - 1v1 live match with countdown + timer
 - In-browser editor with submit
-- Isolated code execution with time/memory limits
-- Per-match live leaderboard / opponent progress
+- Isolated code execution with time/memory limits (Python, then C++ / Go / Java)
+- Per-match live board: tests passed + typing WPM / thinking
 - Post-match result + rating change
 - Global leaderboard (even if just a Postgres query)
 

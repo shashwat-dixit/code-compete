@@ -1,8 +1,8 @@
 # 03 — Architecture
 
-This is the **proposed** architecture from the current README, plus the decisions we still need to make. Nothing here is locked until [open questions](./11-open-questions.md) are answered.
+Locked in [12 Decisions](./12-decisions.md). Older Kafka/VPS wording in git history is obsolete.
 
-## Target shape (from README)
+## Target shape
 
 ```
 Browser / VS Code
@@ -11,10 +11,10 @@ Browser / VS Code
    API Gateway (Go)
         │
         ├── PostgreSQL     persistent users, problems, matches, ratings
-        ├── Redis          match state, leaderboards, pub/sub, rate limits
-        └── Kafka/Redpanda async jobs
+        ├── Redis          match state, leaderboards, pub/sub, rate limits, Streams
+        └── Redis Streams  async jobs
                 │
-                ├── worker-runner     execute code in sandbox
+                ├── worker-runner     execute code in Docker sandbox
                 ├── worker-resolver   apply execution results to match state
                 └── worker-elo        rating updates after match finish
 ```
@@ -33,25 +33,20 @@ Browser / VS Code
 - **Judge work is unsafe and slow.** It must be async and isolated from the API process.
 - **Match state is hot and tiny.** Redis is a good live store; Postgres is the source of truth after the match.
 - **Realtime fanout is a different problem from execution.** Keep WS in the API (or a dedicated gateway) and use pub/sub so workers never talk to sockets directly.
-- **Go** fits long-lived WS, workers, and a small ops footprint on a VPS.
+- **Go** fits long-lived WS, workers, and a small AWS footprint.
 
-## What is heavier than we need on day one
+## Locked defaults
 
-Kafka / Redpanda is the largest cost in this design: extra broker, extra local RAM, extra failure modes, extra contracts. For a solo-built MVP, **Redis Streams** or **NATS JetStream** can replace Kafka until there is a real reason to have a dedicated log.
-
-Recommended default if we want to stay close to the README without eating the complexity:
-
-| Concern | MVP default | Later |
+| Concern | Now | Later |
 | --- | --- | --- |
-| Event bus | Redis Streams (already have Redis) | Kafka/Redpanda when we need replay, multiple independent consumer groups at scale |
+| Event bus | Redis Streams | Kafka/Redpanda if Streams hurts |
 | Match state | Redis hash + pub/sub | same |
 | Persistence | Postgres | same |
-| Judge isolation | Docker (and maybe gVisor later) | Firecracker |
-| API + workers | Separate Go binaries, one repo | same, just more replicas |
+| Judge isolation | Docker (Judge0-shaped runner) | gVisor / Firecracker |
+| API + workers | Separate Go binaries, one repo | more replicas |
+| Deploy | AWS, one region | still not multi-region |
 
-If you strongly want Kafka from day one (learning goal, resume, or future scale), that is a valid choice — it is just not required to ship 1v1.
-
-## Stack options (to decide)
+## Stack notes (historical options)
 
 ### Frontend
 
@@ -82,7 +77,7 @@ If you strongly want Kafka from day one (learning goal, resume, or future scale)
 | Custom JWT + email/password | Full control | More work (reset, verification, bcrypt) |
 | Better Auth / Auth.js | If we stay in Node or add a BFF | Awkward with a Go API |
 
-**Recommendation:** GitHub OAuth (and maybe Google later) issuing **our** JWTs from the Go API. Skip Clerk unless you want zero-auth-work for a demo.
+**Locked:** GitHub OAuth in the Go API, session in an httpOnly cookie. Not Better Auth (TS server). Not Clerk. Details in [12](./12-decisions.md).
 
 ### Realtime
 
@@ -95,7 +90,7 @@ If you strongly want Kafka from day one (learning goal, resume, or future scale)
 
 ### Code execution
 
-See [06 Execution and security](./06-execution-and-security.md). Short version: **do not call out to LeetCode**. Run our own judge. Start with Docker; keep a language-agnostic `Runner` interface.
+See [06](./06-execution-and-security.md) and [13](./13-judge-runner.md). Custom Docker runner, Judge0-shaped. No LeetCode, no public Judge0.
 
 ### Observability
 
@@ -104,11 +99,9 @@ See [06 Execution and security](./06-execution-and-security.md). Short version: 
 - Prometheus + structured logs: ops (latency, queue depth, error rates)
 - PostHog: product analytics (funnels, landing metrics for issue #4)
 
-**Recommendation:** slog JSON + request IDs from day one. Prometheus when compose is real. PostHog only if you want product analytics; it is not required for MVP.
+**Locked:** slog JSON + request IDs. Prometheus later. No PostHog for MVP.
 
-## Suggested monorepo (after stack is confirmed)
-
-Align with README, with one naming fix from `rebuild` (`apps/worker-*` vs `apps/worker/{runner,resolver,elo}` — pick one):
+## Monorepo layout
 
 ```
 code-compete/
@@ -130,17 +123,15 @@ code-compete/
 
 Shared Go code can live in `internal/` at the repo root (idiomatic) instead of `packages/config` + `packages/utils`. Keep `packages/contracts` if we need TS + Go to share event shapes (OpenAPI + generated types, or JSON Schema).
 
-**Recommendation:** one Go module at repo root, `internal/` for shared code, `packages/contracts` for API/WS/event schemas consumed by the web app.
+**Locked:** one Go module at repo root, `internal/` for shared code, `packages/contracts` for API/WS/event schemas.
 
-## Design principles (keep these even if the bus changes)
+## Design principles
 
 1. **Deterministic match state machine.** Same events in → same state out. Workers must be idempotent.
 2. **API never executes user code.**
 3. **Workers never push WebSockets.** They emit events; the API fans out.
 4. **Redis is ephemeral.** A crash may drop an in-flight match; Postgres remains correct. Optionally rebuild live state from Postgres on recovery (V1, not MVP).
-5. **Contracts before features.** Adding a WS event or Kafka topic without a schema is a review fail.
-6. **Sandbox first, language second.** One language with a hard jail is better than five languages that can `curl` the metadata service.
+5. **Contracts before features.** Adding a WS event or stream payload without a schema is a review fail.
+6. **Sandbox first, language second.** Python in a hard jail before C++/Go/Java.
 
-## What we will not decide in this document
-
-Hosting (VPS vs AWS vs Fly), Kafka vs Redis Streams, OAuth provider, and editor library are listed in [open questions](./11-open-questions.md). The rest of the docs assume the **recommended defaults** so we have a concrete design to argue with.
+See [12 Decisions](./12-decisions.md) for leftovers.

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codecompete.dev/schemas/events/submission.queued.v1.json",
+  "title": "submission.queued.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "submission_id", "language", "time_limit_ms", "memory_limit_mb"],
+  "properties": {
+    "v": { "const": 1 },
+    "submission_id": { "type": "string", "format": "uuid" },
+    "language": { "enum": ["python", "cpp", "go", "java"] },
+    "time_limit_ms": { "type": "integer", "minimum": 1 },
+    "memory_limit_mb": { "type": "integer", "minimum": 1 }
+  }
+}

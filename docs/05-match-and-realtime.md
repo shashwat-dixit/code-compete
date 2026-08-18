@@ -48,26 +48,16 @@ Transitions must be **idempotent** (`FINISHED` + extra `AC` from the loser does 
 - Submit goes to judge; first `ACCEPTED` wins
 - Further submissions from either player after `FINISHED` are rejected
 - Time limit: 5–10 minutes (configurable per problem)
-- If timer hits 0 with no AC: **draw**, or winner by most tests passed — **open question**
+- If timer hits 0 with no AC: **most tests passed wins** and takes ELO. Equal tests, no AC: draw until we say otherwise ([14](./14-private-rooms-and-br.md)).
 - Wrong submissions do not eliminate; optional penalty: +2s displayed time or cooldown
 
 ### Submission cooldown
 
 Start with a simple per-user cooldown (e.g. 3–5s) plus a max in-flight of 1 per player. Prevents judge flooding. Token bucket in Redis.
 
-## Battle Royale (later — do not implement yet)
+## Battle Royale (later)
 
-README: “last valid submission gets eliminated.” GitHub #9 wants CRDTs. Both are **underspecified**.
-
-Possible readings (pick one before writing code):
-
-1. **Slowest AC is out** each round: everyone solves the same problem; last player to get AC (or anyone who does not AC) is eliminated; remaining players get a new problem.
-2. **Last remaining valid player wins**: players who fail a round drop; last with an AC stands.
-3. **Continuous BR**: a live shared document / presence field, elimination based on some CRDT state — closest to the Figma article, and the most expensive.
-
-CRDT is the wrong tool for (1) and (2). Those need a match state machine and a judge, which we already have. CRDT is only justified if we want **live shared code or cursor presence** like Figma. That is a cheat vector in a competitive setting.
-
-**Recommendation:** skip CRDT. For BR v1, implement round-based elimination on top of the duel judge. For “presence”, send `{testsPassed, lastSubmitAt}` over WS, not source.
+Specified in [14](./14-private-rooms-and-br.md). Last valid AC of the round is eliminated; play until 3 remain; rank by median AC time. Do not implement until 1v1 works. No CRDT.
 
 ## Matchmaking
 
@@ -91,12 +81,12 @@ Server → client:
 ```json
 { "v": 1, "type": "match.snapshot", "payload": { "matchId": "...", "status": "COUNTDOWN", "endsAt": "...", "players": [] } }
 { "v": 1, "type": "match.status", "payload": { "status": "RUNNING" } }
-{ "v": 1, "type": "board.updated", "payload": { "userId": "...", "passed": 3, "total": 10 } }
+{ "v": 1, "type": "board.updated", "payload": { "userId": "...", "passed": 3, "total": 10, "activity": "typing", "wpm": 38 } }
 { "v": 1, "type": "submission.updated", "payload": { "id": "...", "status": "WRONG_ANSWER" } }
 { "v": 1, "type": "match.finished", "payload": { "winnerId": "...", "ratings": [] } }
 ```
 
-Client → server: heartbeats only for MVP. Do not stream keystrokes.
+Client → server: heartbeats, plus `presence.typing` (rate-limited; no source). See [14](./14-private-rooms-and-br.md).
 
 **Snapshot on subscribe** so reconnects work. Events are incremental.
 
@@ -104,11 +94,11 @@ Client → server: heartbeats only for MVP. Do not stream keystrokes.
 
 | Topic | Producer | Consumer | Payload |
 | --- | --- | --- | --- |
-| `submission.queued` | API | runner | submission id, language, code ref, limits |
-| `execution.completed` | runner | resolver | status, runtime, tests passed, error |
+| `submission.queued` | API | runner | submission id, language, limits |
+| `execution.completed` | runner | resolver | status, runtime, tests passed |
 | `match.finished` | resolver | elo worker, API fanout | match id, results |
 
-If we use Redis Streams, same names as stream keys.
+Redis Streams. Same names as stream keys.
 
 ### Idempotency
 

@@ -1,206 +1,55 @@
 # Code Compete
 
-A real-time competitive coding platform inspired by TypeRacer, designed for algorithmic problem solving.
-Players compete head-to-head in live coding battles with ELO-based matchmaking, real-time leaderboards, and isolated code execution.
+TypeRacer for algorithm problems: same problem, live 1v1, first accepted submission wins, ELO persists, untrusted code runs in a Docker sandbox.
 
-**Project spec (source of truth while we rebuild):** see [`docs/`](./docs/README.md). That folder has scope, architecture options, data model, security notes, roadmap, and the PR review checklist. Answer [`docs/11-open-questions.md`](./docs/11-open-questions.md) before we lock frameworks or change `main` beyond docs.
+**Spec:** [`docs/`](./docs/README.md) · **Decisions:** [`docs/12-decisions.md`](./docs/12-decisions.md) · **PR review:** [`docs/10-pr-review-checklist.md`](./docs/10-pr-review-checklist.md)
 
----
+You implement feature PRs. Reviews are against those docs. This repo only scaffolds the skeleton (healthz, compose, router shell, CI).
 
-## Core Features
+## Stack (locked)
 
-- [ ] Real-time coding battles
-- [ ] Live leaderboard updates
-- [ ] ELO-based matchmaking
-- [ ] Battle Royale mode (last valid submission gets eliminated)
-- [ ] Secure & isolated code execution
-- [ ] Match replays
-- [ ] VS Code extension
+| Piece | Choice |
+| --- | --- |
+| Web | Vite, React 19, TypeScript, Tailwind 4, Zustand, React Router 7, Bun |
+| API + workers | Go |
+| Events | Redis Streams |
+| Live state | Redis |
+| Persistence | PostgreSQL |
+| Auth | GitHub OAuth in the Go API (httpOnly cookie) — not Better Auth |
+| Judge | Custom Docker runner, Judge0-shaped ([spec](./docs/13-judge-runner.md)) |
+| Languages | Python, C++, Go, Java (Python first) |
+| Deploy | AWS, one region |
 
----
-
-## Architecture Overview
-
-**High-level components**
-
-- **Frontend**: React (Vite)
-- **API Gateway**: Go (REST + WebSocket)
-- **Workers**: Go (event-driven via Kafka)
-- **Event Bus**: Kafka / Redpanda
-- **State Store**: Redis
-- **Persistent Store**: PostgreSQL
-- **Infra**: Docker, Docker Compose
-
-**Core principles**
-
-- Event-driven execution
-- Real-time state via Redis
-- Async isolation of code execution
-- Deterministic match state machine
-
----
-
-## 📁 Monorepo Structure
+## Repo layout
 
 ```
-code-compete/
-├── apps/
-│   ├── api/                 # Go API Gateway
-│   ├── worker-runner/       # Code execution worker
-│   ├── worker-resolver/     # Match resolution logic
-│   ├── worker-elo/          # ELO / ranking updates
-│   └── web/                 # Frontend (React + Vite)
-│
-├── packages/
-│   ├── contracts/           # Shared Kafka / WS / API schemas
-│   ├── config/              # Shared config loader
-│   ├── utils/               # Shared utilities
-│   └── observability/       # Logging & metrics
-│
-├── infra/
-│   ├── docker/              # Docker Compose & service configs
-│   ├── db/                  # SQL schema & migrations
-│   └── terraform/           # (Optional) infra as code
-│
-├── scripts/                 # Dev & automation scripts
-└── README.md
+apps/api                 Go HTTP + WebSocket (GET /healthz today)
+apps/worker-runner       Code execution worker (stub)
+apps/worker-resolver     Match resolution worker (stub)
+apps/worker-elo          ELO worker (stub)
+apps/web                 React SPA
+internal/                Shared Go (config today)
+packages/contracts       OpenAPI + event schemas
+infra/docker             Compose: Postgres + Redis
+infra/db/migrations      SQL migrations (empty until auth/problems)
+docs/                    Product + architecture spec
 ```
 
----
-
-## System Flow
-
-- [ ] Player joins match
-- [ ] Match state stored in Redis
-- [ ] Code submission → Kafka event
-- [ ] Execution worker runs code in sandbox
-- [ ] Execution result → Kafka
-- [ ] Match resolver updates state
-- [ ] Leaderboard updated in Redis
-- [ ] WebSocket pushes updates to clients
-
----
-
-## Backend (Go)
-
-### API Gateway
-
-- [ ] JWT authentication
-- [ ] Match creation & join
-- [ ] WebSocket battle updates
-- [ ] Rate limiting (Redis)
-- [ ] Input validation
-
-### Workers
-
-- [ ] Code execution worker
-- [ ] Match resolution worker
-- [ ] ELO update worker
-- [ ] Retry & failure handling
-
----
-
-## Code Execution & Security
-
-- [ ] Docker / gVisor sandbox
-- [ ] CPU & memory limits
-- [ ] Execution timeout
-- [ ] No network access
-- [ ] Read-only filesystem
-- [ ] Language-agnostic runner interface
-
----
-
-## Match Logic
-
-- [ ] Deterministic match state machine
-
-  - [ ] WAITING
-  - [ ] COUNTDOWN
-  - [ ] RUNNING
-  - [ ] FINISHED
-- [ ] Battle Royale elimination logic
-- [ ] Tie-breaking rules
-- [ ] Submission cooldowns
-
----
-
-## Ranking & Matchmaking
-
-- [ ] ELO rating system
-- [ ] Skill-based matchmaking
-- [ ] Global leaderboard
-- [ ] Match-scoped leaderboard
-- [ ] Rating history tracking
-
----
-
-## Real-Time Layer (Redis)
-
-- [ ] Match state storage
-- [ ] Leaderboard sorted sets
-- [ ] Pub/Sub for WebSocket fanout
-- [ ] TTL-based cleanup
-- [ ] Token-bucket rate limiting
-
----
-
-## Frontend (React)
-
-- [ ] Match lobby
-- [ ] Live coding editor
-- [ ] Real-time leaderboard
-- [ ] Match results screen
-- [ ] Replays viewer
-- [ ] Authentication flow
-- [ ] WebSocket integration
-
----
-
-## VS Code Extension
-
-- [ ] Auth with platform
-- [ ] Join live match
-- [ ] Submit code directly
-- [ ] Real-time feedback
-- [ ] Match results inside editor
-
----
-
-## Observability
-
-- [ ] Structured logging
-- [ ] Metrics (Prometheus)
-- [ ] Execution latency tracking
-- [ ] Match lifecycle metrics
-- [ ] Error & retry visibility
-
----
-
-## Infrastructure & DevOps
-
-- [ ] Docker Compose local setup
-- [ ] Single-node Redpanda
-- [ ] PostgreSQL migrations
-- [ ] CI pipeline
-- [ ] Environment-based configs
-- [ ] Cloud deployment (VPS)
-
----
-
-## Future Enhancements
-
-- [ ] Multi-language support
-- [ ] Spectator mode
-- [ ] Tournament brackets
-- [ ] Anti-cheating heuristics
-- [ ] Firecracker microVMs
-- [ ] Horizontal scaling
-
----
-
-## Local Development
+## Local development
 
 ```bash
-docker compose up
+cp .env.example .env
+docker compose -f infra/docker/docker-compose.yml up -d
+make api          # http://localhost:8080/healthz
+make web          # http://localhost:5173
 ```
+
+Requires Docker, Go 1.22+, Bun.
+
+Workers are stubs; they compile and do nothing until you wire Streams.
+
+## What to build next
+
+See [`docs/09-roadmap.md`](./docs/09-roadmap.md). Next useful PRs: GitHub OAuth, then the Python sandbox harness, then the 1v1 match loop.
+
+Battle Royale, private rooms, and the VS Code extension wait until 1v1 is playable. Room invites are a **short code**, not RAG — [`docs/14-private-rooms-and-br.md`](./docs/14-private-rooms-and-br.md).

@@ -42,16 +42,14 @@ The browser is a **realtime client**, not the source of match truth.
 Inspired by LeetCode contest + TypeRacer presence:
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Match  ·  04:12  ·  RUNNING  ·  you 1203 vs opp 1188       │
-├───────────────────────────┬─────────────────────────────────┤
-│ Problem statement         │ Editor (Monaco)                 │
-│ samples                   │ language select                 │
-│                           │ Run samples     Submit          │
-├───────────────────────────┴─────────────────────────────────┤
-│ You ██████░░░░  3/10     Opponent ████░░░░░░  2/10          │
-│ last: WA on test 4       last: TLE                          │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  Match  ·  04:12  ·  RUNNING  ·  you 1203 vs opp 1188            │
+├────────────────────────────┬───────────────────┬─────────────────┤
+│ Problem statement          │ Editor (Monaco)   │ opp  4/10  WA   │
+│ samples                    │ language select   │ 38 WPM          │
+│                            │ Run     Submit    │ you  3/10  TLE  │
+│                            │                   │ 🧠 thinking     │
+└────────────────────────────┴───────────────────┴─────────────────┘
 ```
 
 Do not show opponent source. Do not show hidden tests.
@@ -60,7 +58,7 @@ Issue #2 “good coding UI” means: readable statement, competent editor, obvio
 
 ## Client architecture
 
-Suggested folders once we start building (do not create until stack is confirmed):
+Suggested folders (router shell is in the repo; fill these in feature PRs):
 
 ```text
 apps/web/src/
