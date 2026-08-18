@@ -14,7 +14,7 @@ Browser / VS Code
         ├── Redis          match state, leaderboards, pub/sub, rate limits, Streams
         └── Redis Streams  async jobs
                 │
-                ├── worker-runner     execute code in Docker sandbox
+                ├── worker-runner     thin adapter → gobox (Docker sandbox lives in gobox)
                 ├── worker-resolver   apply execution results to match state
                 └── worker-elo        rating updates after match finish
 ```
@@ -23,7 +23,7 @@ Browser / VS Code
 
 1. Player joins match → API writes match state to Redis, persists stub to Postgres
 2. Submit → API validates, rate-limits, publishes `SubmissionCreated` to the bus
-3. Runner consumes event, executes in sandbox, publishes `ExecutionResult`
+3. Runner adapter consumes the event, calls [gobox](https://github.com/shashwat-dixit/gobox) to execute in a sandbox, publishes `ExecutionResult`
 4. Resolver consumes result, updates Redis match state, maybe finishes the match
 5. API fans out via Redis pub/sub → WebSocket clients
 6. On `FINISHED`, ELO worker updates ratings and history in Postgres
@@ -42,7 +42,7 @@ Browser / VS Code
 | Event bus | Redis Streams | Kafka/Redpanda if Streams hurts |
 | Match state | Redis hash + pub/sub | same |
 | Persistence | Postgres | same |
-| Judge isolation | Docker (Judge0-shaped runner) | gVisor / Firecracker |
+| Judge isolation | Docker via [gobox](https://github.com/shashwat-dixit/gobox) (Judge0-shaped) | gVisor / Firecracker |
 | API + workers | Separate Go binaries, one repo | more replicas |
 | Deploy | AWS, one region | still not multi-region |
 
@@ -90,7 +90,7 @@ Browser / VS Code
 
 ### Code execution
 
-See [06](./06-execution-and-security.md) and [13](./13-judge-runner.md). Custom Docker runner, Judge0-shaped. No LeetCode, no public Judge0.
+See [06](./06-execution-and-security.md) and [13](./13-judge-runner.md). Custom Docker runner in [gobox](https://github.com/shashwat-dixit/gobox), Judge0-shaped. No LeetCode, no hosted Judge0. This repo does not implement the sandbox.
 
 ### Observability
 
@@ -107,7 +107,7 @@ See [06](./06-execution-and-security.md) and [13](./13-judge-runner.md). Custom 
 code-compete/
 ├── apps/
 │   ├── api/                 # HTTP + WS
-│   ├── worker-runner/
+│   ├── worker-runner/       # adapter to gobox; not the sandbox
 │   ├── worker-resolver/
 │   ├── worker-elo/
 │   ├── web/                 # already exists
@@ -115,7 +115,7 @@ code-compete/
 ├── packages/
 │   └── contracts/           # JSON schemas / protobuf / OpenAPI — language-agnostic
 ├── infra/
-│   ├── docker/              # compose + sandbox images
+│   ├── docker/              # compose for postgres + redis (sandbox images live in gobox)
 │   └── db/                  # SQL migrations
 ├── docs/                    # this folder
 └── scripts/

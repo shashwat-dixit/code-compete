@@ -22,7 +22,7 @@ No Redpanda. Streams live in Redis.
 
 ### Runner + Docker
 
-Early on: compose for postgres + redis; **runner on the host** so it can use the host Docker engine. AWS: dedicated worker with Docker, still not privileged Judge0. See [13](./13-judge-runner.md).
+Early on: compose for postgres + redis; **[gobox](https://github.com/shashwat-dixit/gobox) on the host** so it can use the host Docker engine. AWS: dedicated worker with Docker, still not privileged Judge0. See [13](./13-judge-runner.md).
 
 ## Config
 
@@ -68,7 +68,7 @@ Multi-region (issue #5) stays out of scope.
 
 ## What “containerize everything” (issue #3) means here
 
-- Sandbox images: yes, mandatory
+- Sandbox images: yes, mandatory, in [gobox](https://github.com/shashwat-dixit/gobox)
 - API/web: yes, for deploy
 - Local everything-in-compose including DinD: nice, not a blocker for first playable match
 

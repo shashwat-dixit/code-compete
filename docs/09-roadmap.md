@@ -27,11 +27,11 @@ Locked in [12](./12-decisions.md).
 
 **Success:** two browsers, two accounts.
 
-## Phase 3 — Problems and judge (your PRs)
+## Phase 3 — Problems and judge
 
-Follow [13](./13-judge-runner.md). Split PRs: Python sandbox → network/TLE proofs → C++/Go/Java.
+Problems and the `worker-runner` **adapter** are PRs here. The sandbox itself is built by hand in [gobox](https://github.com/shashwat-dixit/gobox) against [13](./13-judge-runner.md). Split gobox PRs: Python sandbox → network/TLE proofs → C++/Go/Java.
 
-**Success:** two-sum judged locally; `curl` in user code fails.
+**Success:** two-sum judged via gobox locally; `curl` in user code fails; this repo does not grow a second judge.
 
 ## Phase 4 — Duel match
 
@@ -78,12 +78,12 @@ Follow [13](./13-judge-runner.md). Split PRs: Python sandbox → network/TLE pro
 Keep them small:
 
 1. Auth (GitHub OAuth)
-2. Problem fixtures + Python runner harness
+2. Problem fixtures (judge harness is gobox)
 3. Match loop
 4. Web match UI + Monaco
 5. ELO + leaderboard
 
-Do not mix OAuth, Docker judge, and Monaco in one PR.
+Do not mix OAuth, Docker judge, and Monaco in one PR. Do not implement the sandbox in this repo.
 
 ## Mapping old GitHub issues
 

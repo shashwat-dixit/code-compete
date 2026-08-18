@@ -1,6 +1,8 @@
 # 13 — Custom judge runner (Judge0-shaped)
 
-You will build this. This doc is the spec so PRs can be reviewed against it. Do **not** vendor Judge0, call the public Judge0 API, or scrape LeetCode.
+**Implementation lives in [gobox](https://github.com/shashwat-dixit/gobox), not in this repo.** Build it by hand there; that README is the checklist. This doc is the **product contract** Code Compete expects so PRs (here and in gobox) can be reviewed against it.
+
+Do **not** vendor Judge0, host Judge0, call the public Judge0 API, or scrape LeetCode. `apps/worker-runner` here stays a thin adapter (load submission/tests → call gobox → publish `execution.completed`). Sandbox images, Docker flags, compile/run, and isolation proofs do not land under `apps/worker-runner` or `internal/judge`.
 
 Goal: an internal runner that **feels like Judge0 to the rest of our system** (async submit → token → poll/callback → statuses → per-language compile/run with CPU/wall/memory limits) while using **Docker** as the isolation layer instead of Judge0’s Isolate-in-privileged-container setup.
 
@@ -26,9 +28,9 @@ Important pieces to copy **as behavior**, not as Ruby:
 | `cpu_time_limit` vs `wall_time_limit` | Both. CPU for fairness, wall as a hang watchdog (sleep/network) |
 | `memory_limit` (KB) | Docker `memory` + reject MLE |
 | `source_code` + `language_id` + `stdin` | Source + language key + **one stdin per test** |
-| `expected_output` | Compared **inside the worker**, never returned for hidden tests |
+| `expected_output` | Compared **inside gobox**, never returned for hidden tests |
 | `compile_output` / `stderr` / `message` | Persist; strip sandbox paths before sending to clients |
-| Languages table with compile/run commands | `internal/judge/languages.go` (or YAML) — four languages |
+| Languages table with compile/run commands | gobox language table (or YAML) — four languages |
 | Isolate (namespaces, cgroups, seccomp) | Docker: `--network=none`, dropped caps, read-only root, pid/memory/CPU limits, non-root |
 | Privileged host so Isolate can mount cgroups | **Do not run privileged.** That is how Judge0 sandbox escapes happen. |
 | 60+ languages | Four: Python, C++, Go, Java |
@@ -40,7 +42,11 @@ Judge0 is GPL-3. Do not copy their source. Copy the **product contract** (status
 ## Where it sits
 
 ```text
-API  --(Redis Stream submission.queued)-->  worker-runner
+API  --(Redis Stream submission.queued)-->  worker-runner (this repo, adapter)
+                                                    │
+                                                    │ gobox Run() / localhost HTTP
+                                                    ▼
+                                             gobox (other repo)
                                                     │
                                                     │ docker run --network=none ...
                                                     ▼
@@ -49,7 +55,7 @@ API  --(Redis Stream submission.queued)-->  worker-runner
 worker-runner --(Redis Stream execution.completed)--> worker-resolver
 ```
 
-The runner is a **library + worker**, not a public HTTP Judge0 clone. If you want a tiny internal HTTP API for local debugging (`POST /internal/run`), bind it to localhost and never expose it.
+gobox is the sandbox. It may be a **library or an internal HTTP service**, not a public HTTP Judge0 clone. A tiny debug API (`POST /internal/run`) must bind to localhost and never be exposed. `wait=true` on POST is still forbidden on anything the API workers call.
 
 ## Statuses (keep Judge0’s meanings)
 
@@ -94,19 +100,25 @@ Java is slow to start. Budget a higher wall-time for JVM warmup or use a fatter 
 
 ## Execution pipeline (per submission)
 
-1. Load submission + problem tests (samples + hidden) from Postgres. Worker uses a DB role that can read tests; the **API role must not** select hidden tests for player queries.
+**code-compete `worker-runner` (adapter):**
+
+1. Load submission + problem tests (samples + hidden) from Postgres. Adapter uses a DB role that can read tests; the **API role must not** select hidden tests for player queries.
 2. Dedupe on `submission_id` (Redis `SETNX exec:dedupe:{id}`). If a result already exists, republish it and stop.
-3. Write source to a temp dir on the **worker host** (not in git, mode 0700).
-4. **Compile** (if needed) in a container with network off. Capture `compile_output`. Non-zero → `COMPILATION_ERROR`.
-5. For each test:
+3. Call gobox with language, source, tests, limits. Hidden fixtures stay on this hop; they must not appear in `execution.completed` or WS.
+4. Publish `execution.completed` with aggregate status.
+
+**gobox:**
+
+1. Write source to a temp dir on the **gobox host** (not in git, mode 0700).
+2. **Compile** (if needed) in a container with network off. Capture `compile_output`. Non-zero → `COMPILATION_ERROR`.
+3. For each test:
    - Start container with stdin piped, stdout/stderr capped (e.g. 1MB each).
    - `cpu_time_limit` = problem `time_limit_ms`.
    - `wall_time_limit` ≈ 2–3× CPU limit (or +2s), so `sleep 100` dies.
    - Memory: problem `memory_limit_mb`.
    - Compare stdout to expected with **normalized newlines**, strip trailing spaces per line (classic CP). Do not trim interior spaces unless the problem says so.
    - Record per-test `passed`, `time`, `memory`, `status`.
-6. Tear down containers (`docker rm -f`) in a `defer`. Temp dir deleted.
-7. Publish `execution.completed` with aggregate status. Never include hidden stdin/expected in the event payload that the API might echo to WS.
+4. Tear down containers (`docker rm -f`) in a `defer`. Temp dir deleted.
 
 ## Docker flags (minimum)
 
@@ -129,7 +141,7 @@ docker run --rm \
 
 - **`--noexec` on tmpfs** will break compilers that write executables to `/tmp`. For compile steps, use `tmpfs` **without** `noexec` on `/work` only, still `nosuid,nodev`.
 - Never mount `/var/run/docker.sock` into the **sandbox**.
-- The **worker** may talk to the host Docker socket (it is trusted). Treat that as a reviewed exception in the runner PR.
+- **gobox** may talk to the host Docker socket (it is trusted). Treat that as a reviewed exception in the gobox PR. The code-compete adapter should not need the socket.
 - No `--privileged`, no `--pid=host`, no `--volume /`.
 
 ## Internal contract (worker message)
@@ -168,20 +180,22 @@ No hidden fixtures in this payload.
 
 ## Local vs AWS
 
-| Env | How the runner talks to Docker |
+| Env | How gobox talks to Docker |
 | --- | --- |
-| Dev | Compose postgres+redis; **runner on the host** so it can use the host Docker engine. |
-| AWS (later) | Worker on EC2/ECS with Docker or a dedicated “judge” instance. Still no privileged Judge0 clone. gVisor (`runsc`) is a later hardening PR. |
+| Dev | Compose postgres+redis in this repo; **gobox on the host** so it can use the host Docker engine. |
+| AWS (later) | gobox on EC2/ECS with Docker or a dedicated “judge” instance. Still no privileged Judge0 clone. gVisor (`runsc`) is a later hardening PR. |
 
-## Build order for your PRs (you implement)
+## Build order (implement in gobox)
+
+Checklist: [gobox README](https://github.com/shashwat-dixit/gobox). Short version:
 
 1. Language table + `python` only, stdin/stdout compare, no match system (harness CLI is fine).
 2. Network-off proof: a program that calls `socket` / `curl` must fail.
 3. TLE proof: `while True: pass` → TLE, container gone.
 4. C++, then Go, then Java.
-5. Hook to Redis Streams + resolver.
+5. Internal API, then code-compete `worker-runner` adapter + resolver hook.
 
-Do not start 2–5 in the same PR as 1.
+Do not start 2–5 in the same PR as 1. Do not put sandbox code in this repo.
 
 ## Review blockers specific to this component
 

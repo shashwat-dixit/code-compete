@@ -2,6 +2,8 @@
 
 Untrusted code execution is the highest-risk part of this product. If the judge is weak, the rest of the app does not matter.
 
+**The sandbox is [gobox](https://github.com/shashwat-dixit/gobox).** This doc is still the security contract. Do not reimplement execution in `apps/worker-runner`.
+
 ## Principles
 
 1. The API process **never** compiles or runs user code.
@@ -39,12 +41,12 @@ Kill the container after the result is collected. Disk growth from leftover cont
 
 ### Languages (product set)
 
-Python, C++, Go, Java. Implement **Python first** in the runner, then the other three. One worker pool, `language` field. Spec: [13](./13-judge-runner.md).
+Python, C++, Go, Java. Implement **Python first** in gobox, then the other three. One worker pool, `language` field. Spec: [13](./13-judge-runner.md). Checklist: [gobox README](https://github.com/shashwat-dixit/gobox).
 
 ## What we will not do
 
 - **LeetCode GraphQL** as a judge or problem source (old README). Legal and operational trap.
-- **Judge0 public instance** for production. We build our own runner. Self-hosted Judge0 is not the plan.
+- **Judge0 public instance** (or self-hosted Judge0) for production. We build our own runner in gobox.
 - **eval in the API process** (Python `exec`, Node `vm`, etc.)
 
 ## AuthN / AuthZ
@@ -88,7 +90,7 @@ CRDT live-sharing of opponent code **hurts** integrity. Do not add it to rated m
 
 - `.env` gitignored (already). Commit `.env.example` only.
 - Never log JWTs, OAuth codes, or submission source at `info` in production (source can contain secrets users pasted by accident).
-- Judge containers must not receive `DATABASE_URL`, AWS keys, or the API’s JWT secret. Pass only what the runner needs.
+- Judge containers must not receive `DATABASE_URL`, AWS keys, or the API’s JWT secret. Pass only what gobox needs.
 
 ## Threat notes for PR review
 
