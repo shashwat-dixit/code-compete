@@ -3,6 +3,8 @@
 A real-time competitive coding platform inspired by TypeRacer, designed for algorithmic problem solving.
 Players compete head-to-head in live coding battles with ELO-based matchmaking, real-time leaderboards, and isolated code execution.
 
+**Project spec (source of truth while we rebuild):** see [`docs/`](./docs/README.md). That folder has scope, architecture options, data model, security notes, roadmap, and the PR review checklist. Answer [`docs/11-open-questions.md`](./docs/11-open-questions.md) before we lock frameworks or change `main` beyond docs.
+
 ---
 
 ## Core Features
